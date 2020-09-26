@@ -27,7 +27,7 @@
 	.globl vdpwrite
 	
 	; global from this module
-	.globl _vdp_dan12vram
+	.globl _vdp_dan22vram
 	
 	.area  _CODE
 		
@@ -38,9 +38,9 @@
 ;---------------------------------------------------------------------------------
 ; Here begin routines that can be call from programs
 ;---------------------------------------------------------------------------------
-; dan1 algorithm by Amy Purple
-; In 2016
-_vdp_dan12vram:
+; dan2 algorithm by Amy Purple
+; in 2017
+_vdp_dan22vram:
     pop     bc							; return adress
     pop     hl							; gfx adress
     pop     de							; VRAM adress
@@ -49,38 +49,62 @@ _vdp_dan12vram:
     push    bc
 		
 ;	di
-		
+
 	call	vdpwrite
 	
 	ld		a, #0x80					; Init. Read bits
 
-dan1_copy_byte:							; Copy literal byte
+	;
+	;	Explanation:
+	;	DAN2 format compared to DAN1 adds this extra step.
+	;	It reads a few bits to adjust the number of extra bits to read during decompression for big offsets.
+	;	The goal is a better optimization of the data stream, making DAN2 a better compression format option.
+	;
+	
+	;	Decode size for high offset values
+	push	ix
+	;	Set max offset size to 10 bits
+	ld	ix, #getbite-3
+dan2_offsetsize_loop:
+	call	getbitdan
+	jr	nc,dan2_offsetsize_end
+	;	Add +1 bit to max offset size (add one more call getbitee)
+	dec	ix
+	dec	ix
+	dec	ix
+	jr	dan2_offsetsize_loop
+dan2_offsetsize_end:
+		
+dan2_copy_byte:							; Copy literal byte
 	ld		c, #0xbe
 	outi
 	inc		de
 
-dan1_main_loop:							; Main loop
+dan2_main_loop:							; Main loop
 	call	getbitdan        	         ; check next bit
-	jr		c,dan1_copy_byte
+	jr		c,dan2_copy_byte
 	
     push	de							; Elias gamma decoding + Special marker
     ld		de, #0x0001
     ld		b,d	
 
-dan1_eliasgamma_0:
+dan2_eliasgamma_0:
     inc		b
 	call	getbitdan					; check next bit
-	jr		c, dan1_eliasgamma_value
+	jr		c, dan2_eliasgamma_value
 	bit		4,b
-    jp		nz, dan1_special			; special marker "0000000000000000"
-	jr		dan1_eliasgamma_0
+	jr		dan2_eliasgamma_0
+										; exit
+	pop	de
+	pop	ix
+	ret
 
-dan1_eliasgamma_value_loop:
+dan2_eliasgamma_value_loop:
     call	getbite						; check next bit -> DE
     rl		d
 	
-dan1_eliasgamma_value:
-	djnz		dan1_eliasgamma_value_loop
+dan2_eliasgamma_value:
+	djnz		dan2_eliasgamma_value_loop
 	push	de
 	pop		bc							; BC = LENGTH
 	
@@ -92,54 +116,54 @@ dan1_eliasgamma_value:
 	ex		af,af'
 	ld		a,b
 	or		a
-	jr		z, dan1_bzero
+	jr		z, dan2_bzero
 	ld		a, #0x03
 
-dan1_bzero:
+dan2_bzero:
 	or		c
 	ld		e, a
 	ex		af, af'
 	dec		e
-	jr		z, dan1_offset2
+	jr		z, dan2_offset2
 	dec		e
-	jr		z, dan1_offset3
+	jr		z, dan2_offset3
 	ld		e, #0x00
 
-dan1_offset4:
+dan2_offset4:
 	call		getbitdan				; check next bit
-	jr		nc, dan1_offset3
-    call		getnibblee				; get next nibble -> E
+	jr		nc, dan2_offset3
+    call		gethighbitse			; get high-bits -> E (this is the difference with dan1 format)
 	inc		e
 	ld		d,e							; D = E+1
-	jr		dan1_offset3a
-dan1_offset3:
+	jr		dan2_offset3a
+dan2_offset3:
 	call		getbitdan				; check next bit
-	jr		nc, dan1_offset2
-dan1_offset3a:
+	jr		nc, dan2_offset2
+dan2_offset3a:
     ld     	e, (hl)						; load offset offset value (8 bits)
     inc   	hl
 	ex		af, af'
 	ld		a,e
 	add		a, #0x12
 	ld		e,a
-	jr		nc, dan1_offset3b
+	jr		nc, dan2_offset3b
 	inc		d
-dan1_offset3b:
+dan2_offset3b:
 	ex		af,af'
-	jr		dan1_copy_from_offset
-dan1_offset2:
+	jr		dan2_copy_from_offset
+dan2_offset2:
 	call		getbitdan				; check next bit
-	jr      	nc, dan1_offset1
+	jr      	nc, dan2_offset1
     call		getnibblee				; get next nibble -> E
 	inc		e
 	inc		e
-	jr		dan1_copy_from_offset
-dan1_offset1:
+	jr		dan2_copy_from_offset
+dan2_offset1:
 	call		getbitdan				; check next bit
 	rl		e
 	
 ; Copy previously seen bytes
-dan1_copy_from_offset:
+dan2_copy_from_offset:
     ex		(sp), hl                	; store source, restore destination
     push	hl                      	; store destination
 	scf
@@ -149,7 +173,7 @@ dan1_copy_from_offset:
 										; COPY BYTES
 	ex		af,af'
 	set		6,d
-dan1_copybytes_loop:
+dan2_copybytes_loop:
 	push	bc
 	ld		c, #0xBF
 	out		(c), l
@@ -177,14 +201,13 @@ dan1_copybytes_loop:
 	res		6,d
 	ex		af,af'
     pop		hl							; restore source address (compressed data)
-    jp		dan1_main_loop
-	
-dan1_special:
-	pop		de
-	
-;	ei
-	ret									; exit
+    jp		dan2_main_loop
 
+gethighbitse:
+	jp	(ix)
+										; LIMIT OFFSET SIZE TO 2^14 = 16K
+	call	getbite						; Load next bit -> E
+	call	getbite						; Load next bit -> E
 getnibblee:
     call	getbite						; Load next bit -> E
     call	getbite						; Load next bit -> E

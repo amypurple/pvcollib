@@ -24,22 +24,13 @@
 	.module pvclvideo3
 	
 	; global from external entries / code
+	.globl vdpwrite
 	
 	; global from this module
 	.globl _vdp_rle2vram
 	
 	.area  _CODE
 		
-;---------------------------------------------------------------------------------
-; Here begin routines that can't be call from programs
-;---------------------------------------------------------------------------------
-vdpwrite:
-    ld      c,#0xbf 				; (1d43h) = 0bfh
-    out     (c),e
-    set     6,d
-    out     (c),d
-	ret
-	
 ;---------------------------------------------------------------------------------
 ; Here begin routines that can be call from programs
 ;---------------------------------------------------------------------------------
@@ -50,7 +41,7 @@ _vdp_rle2vram:
     push    de
     push    hl
     push    bc
-	call		vdpwrite
+	call	vdpwrite
     ld      c,#0xbe 					; (1d47h) = 0beh
 vr2v0:
     ld      a,(hl)

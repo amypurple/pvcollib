@@ -296,14 +296,21 @@ void *vdp_rle2vram (void *rledata,unsigned offset);
 void vdp_ple2vram(void *pledata, unsigned offset);
 
 /**
- * \fn void vdp_dan2vram(void *dandata, unsigned offset)
+ * \fn void vdp_dan12vram(void *dan1data, unsigned offset)
+ * \brief Put data in VRAM with some DAN1 compressed data 
+ *
+ * \fn void vdp_dan22vram(void *dan2data, unsigned offset)
+ * \brief Put data in VRAM with some DAN1 compressed data 
+ *
+ * \fn void vdp_dan32vram(void *dan3data, unsigned offset)
  * \brief Put data in VRAM with some DAN1 compressed data 
  *
  * \param dandata address of data to use
  * \param offset address in VRAM of 1st data to fill
 */
-void vdp_dan2vram(void *dandata, unsigned offset);
-
+void vdp_dan12vram(void *dan1data, unsigned offset);
+void vdp_dan22vram(void *dan2data, unsigned offset);
+void vdp_dan32vram(void *dan3data, unsigned offset);
 
 /*! \fn vdp_blocknmi 
 	\brief set no_nmi flag to avoid nmi 
