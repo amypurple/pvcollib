@@ -24,10 +24,10 @@
 	.module pvclconsole5
 
 	; global from external entries / code
-    .globl _keypad_1
+    .globl _keypad_2
 
 	; global from this module
-	.globl _sys_choice_keypad1
+	.globl _sys_choice_keypad2
 
 	.area   _CODE
 
@@ -44,7 +44,7 @@ _sys_choice:
 	push de
 	push af
 choice:
-	ld	hl,#_keypad_1
+	ld	hl,#_keypad_2
 	ld	c,(hl)
 	ld	a,d
 	sub	a,c
@@ -53,7 +53,7 @@ choice:
 	sub a,e
 	jr	c,	choice
 endchoice:
-	ld	hl,#_keypad_1
+	ld	hl,#_keypad_2
 	ld	a,(hl)
 	sub	a,#15	                ; PAD_KEYNONE
 	jr	c, endchoice

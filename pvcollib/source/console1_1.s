@@ -21,42 +21,51 @@
 ;		distribution.
 ;
 ;---------------------------------------------------------------------------------
-	.module pvclconsole5
+; code by Amy Purple, last updated in 2013
+	.module pvclconsole1
 
 	; global from external entries / code
-    .globl _keypad_1
+	.globl _joypad_1
+	.globl _joypad_2
 
 	; global from this module
-	.globl _sys_choice_keypad1
+	.globl _sys_pause_delay
 
 	.area   _CODE
 
 ;---------------------------------------------------------------------------------
 ; Here begin routines that can't be call from programs
 ;---------------------------------------------------------------------------------
-
-;---------------------------------------------------------------------------------
-; Here begin routines that can be call from programs
-;---------------------------------------------------------------------------------
-_sys_choice:
+_sys_pause_delay:
 	pop	af
-	pop de
-	push de
-	push af
-choice:
-	ld	hl,#_keypad_1
-	ld	c,(hl)
-	ld	a,d
-	sub	a,c
-	jr	c,	choice
-	ld	a,c
-	sub a,e
-	jr	c,	choice
-endchoice:
-	ld	hl,#_keypad_1
-	ld	a,(hl)
-	sub	a,#15	                ; PAD_KEYNONE
-	jr	c, endchoice
-	ld	l,c
-	ret
-
+	pop	de
+	push	de
+	push	af
+	ld	a,(0x73c4)
+	push	af									; keep vdp_reg #1 in stack
+	or	#0x20
+	ld	c,a
+	ld	b,#1
+	call	0x1fd9								; enable nmi to update joypad_1 and joypad_2
+	push	de
+csp1:
+	ld	a,(_joypad_1)
+	ld	h,a
+	ld	a,(_joypad_2)
+	or	h
+	and	#0xf0
+	jr	nz,csp2
+	halt				; Wait one refresh
+	pop	de
+	dec	de				; decrease counter
+	push	de
+	ld	a,e
+	or	d
+	jr	nz, csp1		; if time is up -> goto end
+csp2:
+	pop	de
+	pop	af
+	ld	c,a
+	ld	b,#1
+	jp	0x1fd9									; set back the vdp_reg #1 value
+		
