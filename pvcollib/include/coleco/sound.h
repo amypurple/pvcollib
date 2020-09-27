@@ -103,4 +103,13 @@ void snd_stopall(void);
 */
 u8 snd_isplaying(u8 sound_number);
 
+/**
+ * \fn snd_play_dsound (u8 slow)
+ * \brief retrieve if channel is playing or not
+ *
+ * \param slow is a speed adjustment to play the sample sound
+ * \return nothing
+*/
+void snd_play_dsound(u8 slow);
+
 #endif
