@@ -114,13 +114,17 @@ char *sys_str(unsigned value);
 
 /**
  * \fn void sys_memcpyb (void *dest,void *src,unsigned num)
- * \brief Copy memory 
+ * \brief Copy memory backward
+ *
+ * \fn void sys_memcpyf (void *dest,void *src,unsigned num)
+ * \brief Copy memory forward
  *
  * \param dest destination memory
  * \param src source memory
  * \param num number of bytes to copy
 */
 void sys_memcpyb (void *dest,void *src,unsigned num);
+void sys_memcpyf (void *dest,void *src,unsigned num);
 
 /**
  * \fn u8 sys_choice_keypad1(u8 minval, u8 maxval)
