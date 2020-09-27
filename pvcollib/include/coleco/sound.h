@@ -112,4 +112,25 @@ u8 snd_isplaying(u8 sound_number);
 */
 void snd_play_dsound(u8 slow);
 
+/**
+ * \fn snd_nextmusic (void *snd_sequence)
+ * \brief set as next sounds sequence aka music to be played
+ *
+ * \fn snd_startmusic (void *snd_sequence)
+ * \brief start the sounds sequence aka music
+ *
+ * \fn snd_stopmusic (void)
+ * \brief stop any sounds sequence aka music
+ *
+ * \fn snd_updatemusic (void)
+ * \brief update the sounds sequences aka music, to be placed in the NMI routine
+ *
+ * \param snd_sequence address of sounds from the sounds table to be played in sequence
+ * \return nothing
+*/
+void snd_nextmusic (void *snd_sequence);
+void snd_startmusic (void *snd_sequence);
+void snd_stopmusic (void);
+void snd_updatemusic (void);
+
 #endif
